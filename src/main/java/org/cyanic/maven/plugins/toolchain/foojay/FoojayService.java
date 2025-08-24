@@ -19,6 +19,7 @@ package org.cyanic.maven.plugins.toolchain.foojay;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
@@ -54,8 +55,6 @@ public final class FoojayService {
     private FoojayService() {}
 
     public static Path downloadAndExtractJdk(Log log, Proxy proxySettings, String version, String vendor) throws Exception {
-        log.info("Downloading JDK " + vendor + " " + version + " from Foojay");
-
         String[] fileNameAndDownloadUrl = parseFileNameAndDownloadUrl(log, proxySettings, version, vendor);
 
         if (fileNameAndDownloadUrl == null) {
@@ -82,13 +81,11 @@ public final class FoojayService {
             jdksDir.toFile().mkdir();
         }
 
-        Path jdkHome = downloadAndExtract(log, downloadUrl, jdkFileName, jdksDir);
+        Path jdkHome = downloadAndExtract(log, downloadUrl, version, vendor, jdkFileName, jdksDir);
 
         if (jdkHome.resolve("Contents").resolve("Home").toFile().exists()) {
             jdkHome = jdkHome.resolve("Contents").resolve("Home");
         }
-
-        log.info("JDK downloaded: " + jdkHome.toAbsolutePath());
 
         if (vendor.contains("graalvm")) {
             Path guBin = jdkHome.resolve("bin").resolve("gu");
@@ -151,7 +148,7 @@ public final class FoojayService {
                 + "&bitness=" + bitness
                 + "&archive_type=" + archiveType
                 + "&libc_type=" + libcType
-                + "&latest=overall&package_type=jdk&discovery_scope_id=directly_downloadable&match=any&javafx_bundled=false&directly_downloadable=true&release_status=ga";
+                + "&latest=overall&package_type=jdk&discovery_scope_id=directly_downloadable&match=any&javafx_bundled=false&directly_downloadable=true";
 
         HttpGet request = new HttpGet(queryUrl);
 
@@ -212,7 +209,17 @@ public final class FoojayService {
         return arch;
     }
 
-    private static Path downloadAndExtract(Log log, String link, String fileName, Path destDir) throws Exception {
+    private static Path downloadAndExtract(Log log, String link, String jdkVersion, String jdkVendor, String fileName, Path destDir) throws Exception {
+        Path jdkHome = destDir.resolve(jdkVendor).resolve(jdkVersion);
+
+        if (jdkHome.toFile().exists()) {
+            log.info("JDK already present at " + jdkHome.toAbsolutePath() + ", no need to download again");
+
+            return jdkHome;
+        }
+
+        log.info("Downloading JDK " + jdkVendor + " " + jdkVersion + " from Foojay");
+
         File destFile = destDir.resolve(fileName).toFile();
 
         if (!destFile.exists()) {
@@ -229,7 +236,11 @@ public final class FoojayService {
 
         destFile.delete();
 
-        return destDir.resolve(extractDir);
+        FileUtils.moveDirectory(destDir.resolve(extractDir).toFile(), jdkHome.toFile());
+
+        log.info("JDK downloaded: " + jdkHome.toAbsolutePath());
+
+        return jdkHome;
     }
 
     private static String getRootNameInArchive(File archiveFile) throws Exception {
@@ -238,14 +249,26 @@ public final class FoojayService {
         if (archiveFile.getName().endsWith("tar.gz") || archiveFile.getName().endsWith("tgz")) {
             archiveInputStream = new TarArchiveInputStream(new GzipCompressorInputStream(Files.newInputStream(archiveFile.toPath())));
         } else {
-            archiveInputStream = new ZipArchiveInputStream((Files.newInputStream(archiveFile.toPath())));
+            archiveInputStream = new ZipArchiveInputStream(Files.newInputStream(archiveFile.toPath()));
         }
 
-        String name = archiveInputStream.getNextEntry().getName();
+        String rootName = null;
+        ArchiveEntry entry;
+
+        while ((entry = archiveInputStream.getNextEntry()) != null) {
+            String entryName = entry.getName();
+
+            String[] parts = entryName.split("/");
+
+            if (parts.length > 0) {
+                rootName = parts[0];
+                break;
+            }
+        }
 
         archiveInputStream.close();
 
-        return name;
+        return rootName;
     }
 
     private static void extractArchiveFile(File sourceFile, File destDir) {

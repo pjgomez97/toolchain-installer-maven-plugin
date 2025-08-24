@@ -63,7 +63,7 @@ public class FoojayHelperTest {
             ToolchainPrivate toolchain = FoojayHelper.getJdkFromFoojay(log, proxySettings, JDK_VERSION, JDK_VENDOR);
 
             assertEquals(toolchainPrivateMock, toolchain);
-            verify(log).info("Adding downloaded JDK to toolchains.xml");
+            verify(log).info("Adding JDK to toolchains.xml");
         }
     }
 

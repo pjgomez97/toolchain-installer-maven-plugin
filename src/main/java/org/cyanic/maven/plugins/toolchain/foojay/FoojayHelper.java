@@ -33,7 +33,7 @@ public final class FoojayHelper {
             Path jdkHome = FoojayService.downloadAndExtractJdk(log, proxySettings, version, vendor);
 
             if (jdkHome != null) {
-                log.info("Adding downloaded JDK to toolchains.xml");
+                log.info("Adding JDK to toolchains.xml");
 
                 return addJDKToToolchains(jdkHome, version, vendor);
             }
