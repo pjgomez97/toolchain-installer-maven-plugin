@@ -1,0 +1,14 @@
+Toolchain Installer Maven Plugin
+Copyright 2025 [pjgomez97]
+
+This project is a fork of the original toolchains-maven-plugin by linux-china.
+Original project: https://github.com/linux-china/toolchains-maven-plugin
+Original copyright: linux-china
+
+This product includes software developed by:
+- The Apache Software Foundation (http://www.apache.org/)
+- Google Inc. (Gson library)
+- The Apache Commons project (http://commons.apache.org/)
+- Codehaus Plexus (http://plexus.codehaus.org/)
+
+This product uses the Foojay API (https://foojay.io/) for JDK distribution information.

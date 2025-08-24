@@ -1,0 +1,34 @@
+<plexus>
+    <components>
+        <component>
+            <role>org.codehaus.plexus.component.configurator.ComponentConfigurator</role>
+            <role-hint>toolchain-configurator</role-hint>
+            <implementation>org.codehaus.plexus.component.configurator.BasicComponentConfigurator</implementation>
+            <requirements>
+                <requirement>
+                    <role>org.codehaus.plexus.component.configurator.converters.lookup.ConverterLookup</role>
+                    <role-hint>toolchain-configurator</role-hint>
+                </requirement>
+            </requirements>
+        </component>
+
+        <component>
+            <role>org.codehaus.plexus.component.configurator.converters.lookup.ConverterLookup</role>
+            <role-hint>toolchain-configurator</role-hint>
+            <implementation>org.codehaus.plexus.component.configurator.converters.lookup.DefaultConverterLookup</implementation>
+            <requirements>
+                <requirement>
+                    <role>org.codehaus.plexus.component.configurator.converters.ConfigurationConverter</role>
+                    <role-hint>ToolchainConfig</role-hint>
+                    <field-name>customConverters</field-name>
+                </requirement>
+            </requirements>
+        </component>
+
+        <component>
+            <role>org.codehaus.plexus.component.configurator.converters.ConfigurationConverter</role>
+            <role-hint>ToolchainConfig</role-hint>
+            <implementation>org.cyanic.maven.plugins.toolchain.config.ToolchainConfigParser</implementation>
+        </component>
+    </components>
+</plexus>
